@@ -56,21 +56,20 @@ etc.), and fuzzy string matching (`rapidfuzz`) against the known list of
 against.** Without one, the typo-correction step doesn't work at all — it
 can only normalize formatting, not fix misspellings.
 
-### 2. LLM-based (`03_llm_cleaner.py`)
+### 2. LLM-based (Groq Llama 3.3)
 Reads each messy name and outputs the canonical company name using the
 model's trained knowledge of real companies — no reference list, no regex
-rules. See **"How the LLM predictions were generated"** below for an
-important honesty note on how this was actually run in this repo.
+rules. This runs live against Groq's high-speed API.
 
 ## Results
 
-| Metric | Rule-Based | LLM-Based (estimated) |
+| Metric | Rule-Based | LLM-Based (Live) |
 |---|---|---|
-| Overall accuracy | 97.4% | 99.3% |
-| Accuracy on plain corruption | 97.6% | 99.4% |
-| Accuracy on near-duplicate rows | 95.6% | 98.5% |
-| Speed (571 rows) | 0.05s | ~86s (estimated) |
-| Cost (571 rows) | $0.00 | ~$0.03 (estimated) |
+| Overall accuracy | 97.4% | 85.5% |
+| Accuracy on plain corruption | 97.6% | 85.5% |
+| Accuracy on near-duplicate rows | 95.6% | 85.3% |
+| Speed (571 rows) | ~0.08s | ~37s |
+| Cost (571 rows) | $0.00 | ~$0.00 |
 | Needs a reference list? | Yes | No |
 
 Run `python main.py` to regenerate this table from the raw outputs.
@@ -91,36 +90,6 @@ In practice, a real pipeline would use both: rule-based cleaning first
 confidently resolve to an LLM — this is a common, cost-effective pattern in
 production data-quality pipelines.
 
-## ⚠️ How the LLM predictions were generated (read this before presenting results)
-
-This project was built in a sandboxed environment with no LLM API key
-available, so `03_llm_cleaner.py` reads from a **pre-computed prediction
-cache** (`data/llm_predictions_cache.json`) rather than calling a live API.
-
-That cache was built by:
-1. Claude (in the build conversation) reading each messy name and applying
-   its trained knowledge of real company entities to predict the canonical
-   name — the same underlying reasoning a live API call performs, just
-   without the network round-trip.
-2. `scripts/_dev_build_llm_cache.py` then deliberately reintroducing
-   realistic formatting variance on ~10% of rows (dropping "(The)",
-   "Corporation" ↔ "Corp.", etc.) to simulate a genuine, well-documented LLM
-   failure mode — getting the entity right but not the exact canonical
-   string — rather than reporting an artificially perfect 100%.
-
-**Cost and latency numbers above are documented estimates** based on
-published small-model API pricing and typical batched-completion latency —
-**not measured from a real call**. Say so if you present this project;
-don't imply they were timed.
-
-**`scripts/03b_llm_cleaner_live.py` is included and ready to run** if you
-have a real API key (Anthropic, OpenAI, Groq, etc.) — it will produce real,
-measured cost and latency numbers instead of estimates:
-```bash
-pip install anthropic
-export ANTHROPIC_API_KEY=sk-...
-python scripts/03b_llm_cleaner_live.py --limit 50   # cheap test run first
-```
 
 ## How to run it yourself
 
@@ -139,7 +108,6 @@ python main.py
 │   ├── corrupted_companies.csv         # synthetic messy data (generated)
 │   ├── rule_based_output.csv           # generated
 │   ├── llm_based_output.csv            # generated
-│   ├── llm_predictions_cache.json      # see honesty note above
 │   └── evaluation_summary.json         # generated
 ├── src/
 │   └── rule_vs_llm/
