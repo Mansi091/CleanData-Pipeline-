@@ -16,26 +16,28 @@ wins, and where.
 
 ## Pipeline
 
-```
-data/sp500_clean.csv (real, downloaded)
-        │
-        ▼
-01_generate_corrupted_data.py   →  data/corrupted_companies.csv
-        │                          (messy_name, ground_truth, is_injected_duplicate)
-        ├──────────────┬──────────────
-        ▼              ▼
-02_rule_based_      03_llm_cleaner.py
-cleaner.py                │
-        │                  │
-        ▼                  ▼
-data/rule_based_    data/llm_based_
-output.csv           output.csv
-        │                  │
-        └────────┬─────────┘
-                  ▼
-          04_evaluate.py
-                  ▼
-      data/evaluation_summary.json
+```mermaid
+graph TD
+    A[data/sp500_clean.csv<br><i>Real Ground Truth</i>] --> B(generation.py)
+    B -->|Generates| C[data/corrupted_companies.csv<br><i>Messy Inputs</i>]
+    
+    C --> D(rule_based.py)
+    C --> E(llm.py<br><i>Groq API</i>)
+    
+    A --> D
+    
+    D -->|Outputs| F[data/rule_based_output.csv]
+    E -->|Outputs| G[data/llm_based_output.csv]
+    
+    F --> H(evaluate.py)
+    G --> H
+    
+    H -->|Produces| I[data/evaluation_summary.json]
+
+    classDef script fill:#1f2937,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef data fill:#111827,stroke:#10b981,stroke-width:2px,color:#fff;
+    class B,D,E,H script;
+    class A,C,F,G,I data;
 ```
 
 ## Data source
