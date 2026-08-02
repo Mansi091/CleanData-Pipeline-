@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.env
+data/*_output.csv
+data/corrupted_companies.csv
+data/evaluation_summary.json
+data/llm_predictions_cache.json
+# Keep sp500_clean.csv
+!data/sp500_clean.csv
